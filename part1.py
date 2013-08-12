@@ -9,14 +9,14 @@ def low_func(proc):
     controller_write.write('{0}:request\n'.format(pid))
     response = proc.read.readline()
     print('Low priority:', pid, '- got resource')
-                           
+
     sum = 0
     for i in range(100000000):
         sum += i
 
     controller_write.write('{0}:release\n'.format(pid))
     print('Low priority:', pid, '- released resource')
-        
+
     for i in range(100000000):
         sum += i
 
@@ -37,7 +37,7 @@ def high_func(proc):
     controller_write.write('{0}:release\n'.format(pid))
     print('High priority:', pid, '- released resource')
 
-    
+
 #===============================================================================
 class SimpleProcess():
     def __init__(self, priority, function):
@@ -53,11 +53,11 @@ class SimpleProcess():
     # Creates the new process for this to run in when 'run' is first called.
     def run(self):
         self.pid = os.fork() # the child is the process
-        
+
         if self.pid: # in the parent
             self.read.close()
             processes[self.pid] = self
-            
+
         else: # in the child
             self.write.close()
             self.func(self)
@@ -111,15 +111,17 @@ class Scheduler():
 
     # Add a process to the run list
     def add_process(self, process):
-        pass # replace with your code
+        self.ready_list.append(process)
+        self.ready_list= sorted(self.ready_list, key=lambda process:process.priority)
+
 
     def remove_process(self, process):
-        pass # replace with your code
+        self.ready_list.remove(process)
 
     # Selects the process with the best priority.
     # If more than one have the same priority these are selected in round-robin fashion.
     def select_process(self):
-        pass # replace with your code
+        return self.ready_list[0]
 
     # Suspends the currently running process by sending it a STOP signal.
     @staticmethod
@@ -133,7 +135,7 @@ class Scheduler():
             os.kill(process.pid, signal.SIGCONT)
         else:
             process.run()
-    
+
     def run(self):
         current_process = None
         while True:
@@ -159,7 +161,7 @@ class Scheduler():
                 print('remove process', current_process.pid, 'from ready list')
                 self.remove_process(current_process)
                 current_process = None
-        
+
 #===============================================================================
 
 controller = Controller()
