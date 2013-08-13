@@ -84,6 +84,16 @@ class Controller():
             pid = int(pid)
             # possible race condition on line below
             requesting_process = processes[pid]
+
+            #pseudocode to prevent priority inversion
+            """
+            if process is blocked:
+                find pid of process holding lock on resources
+                elevate priority to of lock holding process to blocked process
+                when lock is released or lock holding process quits:
+                    restore priority back
+            """
+
             if message == 'request':
                 if not owner: # no current owner
                     owner = requesting_process
