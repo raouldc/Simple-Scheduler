@@ -112,8 +112,7 @@ class Scheduler():
     # Add a process to the run list
     def add_process(self, process):
         self.ready_list.append(process)
-        self.ready_list= sorted(self.ready_list, key=lambda process:process.priority)
-
+        self.ready_list= sorted(self.ready_list, key=lambda process:process.priority,reverse=True)
 
     def remove_process(self, process):
         self.ready_list.remove(process)
@@ -121,7 +120,26 @@ class Scheduler():
     # Selects the process with the best priority.
     # If more than one have the same priority these are selected in round-robin fashion.
     def select_process(self):
-        return self.ready_list[0]
+        if len(self.ready_list) is 0:
+            return
+
+        currentProcess = self.ready_list[0]
+        pri = currentProcess.priority
+        ind = 0
+
+        #find index of process with lower priority
+        for i in range(1,len(self.ready_list)):
+            if pri > self.ready_list[i].priority:
+                ind = i - 1
+                break
+            else:
+                pri = self.ready_list[i].priority
+
+        #swap processes
+        self.ready_list.remove(currentProcess)
+        self.ready_list.insert(ind, currentProcess)
+
+        return currentProcess
 
     # Suspends the currently running process by sending it a STOP signal.
     @staticmethod
