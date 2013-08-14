@@ -75,6 +75,8 @@ class Controller():
     def run(self):
         owner = None
         queue = []
+        reqProcessList =[]
+        originalPriority = None
 
         while True:
             input_string = controller_read.readline()
@@ -91,24 +93,29 @@ class Controller():
                 find pid of process holding lock on resources
                 add requesting process to requestingprocess list
                 find highest priority in requesting process list
+                suspend all the processes in the list
                 elevate priority to of lock holding process to highest priority
                 when lock is released:
                     restore priority back
+                    resume all processes
             """
             if message == 'request':
                 if not owner: # no current owner
                     owner = requesting_process
                     owner.write.write('reply\n')
-                else: # currently owned
-                    scheduler.remove_process(requesting_process)
-                    queue.append(requesting_process)
+                elif owner.priority < requesting_process.priority: # currently owned
+                    originalPriority = owner.priority
+                    reqProcessList.append(requesting_process)
+                    if len(reqProcessList) < 2:
+                        owner.priority = requesting_process.priority
+                    else:
+                        owner.priority = max(key = lambda x:reqProcessList[x].priority)
             elif message == 'release' and owner == requesting_process:
                 # the first in the queue gets it
-                if len(queue) < 1:
+                if len(reqProcessList) < 1:
                     owner = None
                 else:
-                    owner = queue.pop(0)
-                    scheduler.add_process(owner)
+                    owner.priority = originalPriority
                     owner.write.write('reply\n')
             print('owner pid:', owner.pid if owner else None)
 #===============================================================================
