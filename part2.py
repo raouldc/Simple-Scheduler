@@ -89,11 +89,12 @@ class Controller():
             """
             if process is blocked:
                 find pid of process holding lock on resources
-                elevate priority to of lock holding process to blocked process
-                when lock is released or lock holding process quits:
+                add requesting process to requestingprocess list
+                find highest priority in requesting process list
+                elevate priority to of lock holding process to highest priority
+                when lock is released:
                     restore priority back
             """
-
             if message == 'request':
                 if not owner: # no current owner
                     owner = requesting_process
@@ -110,7 +111,6 @@ class Controller():
                     scheduler.add_process(owner)
                     owner.write.write('reply\n')
             print('owner pid:', owner.pid if owner else None)
-
 #===============================================================================
 # The dummy scheduler.
 # Every second it selects the next process to run.
