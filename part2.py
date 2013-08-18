@@ -75,7 +75,6 @@ class Controller():
     def run(self):
         owner = None
         queue = []
-        reqProcessList =[]
         originalPriority = None
 
         while True:
@@ -105,18 +104,30 @@ class Controller():
                     owner.write.write('reply\n')
                 elif owner.priority < requesting_process.priority: # currently owned
                     originalPriority = owner.priority
-                    reqProcessList.append(requesting_process)
-                    if len(reqProcessList) < 2:
+                    scheduler.remove_process(owner)
+                    queue.append(requesting_process)
+                    scheduler.remove_process(requesting_process)
+                    if len(queue) < 2:
                         owner.priority = requesting_process.priority
                     else:
                         owner.priority = max(key = lambda x:reqProcessList[x].priority)
+                    scheduler.add_process(owner)
             elif message == 'release' and owner == requesting_process:
                 # the first in the queue gets it
-                if len(reqProcessList) < 1:
+                if len(queue)<1:
                     owner = None
                 else:
+                    #sort by priority
+                    #since sorted is stable longer waiting processes will be first
+                    queue= sorted(queue, key=lambda process:process.priority,reverse=True)
+                    scheduler.remove_process(owner)
                     owner.priority = originalPriority
+                    scheduler.add_process(owner)  
                     owner.write.write('reply\n')
+                    #set owner to next waiting process
+                    owner = queue.pop(0)
+                    owner.write.write('reply\n')
+                    scheduler.add_process(owner)
             print('owner pid:', owner.pid if owner else None)
 #===============================================================================
 # The dummy scheduler.
@@ -125,6 +136,7 @@ class Scheduler():
 
     def __init__(self):
         self.ready_list = []
+        self.lock = threading.Lock()
 
     # Add a process to the run list
     def add_process(self, process):
@@ -139,23 +151,23 @@ class Scheduler():
     def select_process(self):
         if len(self.ready_list) is 0:
             return
-
+    
         currentProcess = self.ready_list[0]
-        pri = currentProcess.priority
-        ind = 0
-
+#         pri = currentProcess.priority
+#         ind = 0
+        
         #find index of process with lower priority
-        for i in range(1,len(self.ready_list)):
-            if pri > self.ready_list[i].priority:
-                ind = i - 1
-                break
-            else:
-                pri = self.ready_list[i].priority
-
+#         for i in range(1,len(self.ready_list)):
+#             if pri > self.ready_list[i].priority:
+#                 ind = i - 1
+#                 break
+#             else:
+#                 pri = self.ready_list[i].priority
+    
         #swap processes
-        self.ready_list.remove(currentProcess)
-        self.ready_list.insert(ind, currentProcess)
-
+        self.remove_process(currentProcess)
+        self.add_process(currentProcess)
+    
         return currentProcess
 
     # Suspends the currently running process by sending it a STOP signal.

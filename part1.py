@@ -108,11 +108,14 @@ class Scheduler():
 
     def __init__(self):
         self.ready_list = []
-
+        self.lock = threading.Lock()
     # Add a process to the run list
     def add_process(self, process):
-        self.ready_list.append(process)
-        self.ready_list= sorted(self.ready_list, key=lambda process:process.priority,reverse=True)
+        #use a lock to prevent race condition where other processes
+        # will add to the list
+        with self.lock:
+            self.ready_list.append(process)
+            self.ready_list= sorted(self.ready_list, key=lambda process:process.priority,reverse=True)
 
     def remove_process(self, process):
         self.ready_list.remove(process)
@@ -122,23 +125,23 @@ class Scheduler():
     def select_process(self):
         if len(self.ready_list) is 0:
             return
-
+    
         currentProcess = self.ready_list[0]
-        pri = currentProcess.priority
-        ind = 0
-
+#         pri = currentProcess.priority
+#         ind = 0
+        
         #find index of process with lower priority
-        for i in range(1,len(self.ready_list)):
-            if pri > self.ready_list[i].priority:
-                ind = i - 1
-                break
-            else:
-                pri = self.ready_list[i].priority
-
+#         for i in range(1,len(self.ready_list)):
+#             if pri > self.ready_list[i].priority:
+#                 ind = i - 1
+#                 break
+#             else:
+#                 pri = self.ready_list[i].priority
+    
         #swap processes
-        self.ready_list.remove(currentProcess)
-        self.ready_list.insert(ind, currentProcess)
-
+        self.remove_process(currentProcess)
+        self.add_process(currentProcess)
+    
         return currentProcess
 
     # Suspends the currently running process by sending it a STOP signal.
