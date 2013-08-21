@@ -1,4 +1,4 @@
-se-340-assignment-1
+Simple Scheduler
 ===================
 
-SE 340 Assignment 1
+Simple Process Scheduler
